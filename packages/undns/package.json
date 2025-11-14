@@ -1,7 +1,7 @@
 {
   "name": "undns",
-  "version": "0.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Unified DNS management library for multi-provider DNS operations",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
@@ -21,7 +21,17 @@
     "type": "git",
     "url": "git+https://github.com/DemoMacro/undns.git"
   },
-  "keywords": [],
+  "keywords": [
+    "dns",
+    "dns-management",
+    "cloudflare",
+    "vercel",
+    "dnspod",
+    "domain",
+    "records",
+    "typescript",
+    "nodejs"
+  ],
   "author": {
     "name": "Demo Macro",
     "email": "abc@imst.xyz",
@@ -32,5 +42,5 @@
     "url": "https://github.com/DemoMacro/undns/issues"
   },
   "homepage": "https://github.com/DemoMacro/undns#readme",
-  "dependencies": {}
+  "devDependencies": {}
 }

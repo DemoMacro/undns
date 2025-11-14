@@ -1,7 +1,7 @@
 {
   "name": "@demomacro/undns",
   "version": "0.0.0",
-  "description": "",
+  "description": "Unified DNS management library for multi-provider DNS operations",
   "private": true,
   "scripts": {
     "dev": "pnpm -r prepack --stub",
@@ -13,7 +13,16 @@
     "type": "git",
     "url": "git+https://github.com/DemoMacro/undns.git"
   },
-  "keywords": [],
+  "keywords": [
+    "dns",
+    "dns-management",
+    "cloudflare",
+    "vercel",
+    "dnspod",
+    "domain",
+    "records",
+    "typescript"
+  ],
   "author": {
     "name": "Demo Macro",
     "email": "abc@imst.xyz",
@@ -27,9 +36,9 @@
   "devDependencies": {
     "@funish/basis": "0.1.2",
     "@prettier/plugin-oxc": "0.0.4",
-    "@types/node": "24.9.1",
-    "oxlint": "1.24.0",
-    "oxlint-tsgolint": "0.3.0",
+    "@types/node": "24.10.1",
+    "oxlint": "1.28.0",
+    "oxlint-tsgolint": "0.6.0",
     "prettier": "3.6.2",
     "unbuild": "3.6.1"
   },
