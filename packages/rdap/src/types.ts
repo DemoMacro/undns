@@ -16,7 +16,7 @@ export type RdapConformance =
  * Common RDAP object fields
  */
 export interface RdapCommon {
-  rdapConformance: RdapConformance[];
+  rdapConformance?: RdapConformance[];
   notices?: RdapNotice[];
   remarks?: RdapRemark[];
   links?: RdapLink[];
@@ -211,7 +211,8 @@ export interface RdapAutnum extends RdapCommon {
 /**
  * RDAP error
  */
-export interface RdapError extends RdapCommon {
+export interface RdapErrorResponse extends RdapCommon {
+  objectClassName: "error";
   errorCode: number;
   title: string;
   description: string[];
@@ -225,32 +226,23 @@ export type RdapResponse =
   | RdapNameserver
   | RdapEntity
   | RdapIpNetwork
-  | RdapAutnum
-  | RdapError;
+  | RdapAutnum;
 
 /**
  * RDAP query types
  */
 export type RdapQueryType =
-  | "domain" // Domain names
-  | "nameserver" // Nameservers
-  | "entity" // Entities (organizations, individuals)
-  | "ip" // IP networks
-  | "autnum" // Autonomous system numbers
-  | "help" // Help information
-  | "domains" // Search domains
-  | "nameservers" // Search nameservers
-  | "entities"; // Search entities
+  | "domain"
+  | "nameserver"
+  | "entity"
+  | "ip"
+  | "autnum"
+  | "help";
 
 /**
  * RDAP bootstrap service types
  */
-export type RdapBootstrapType =
-  | "asn" // Autonomous System Numbers
-  | "dns" // Domain names
-  | "ipv4" // IPv4 addresses
-  | "ipv6" // IPv6 addresses
-  | "object-tags"; // Entity handles
+export type RdapBootstrapType = "asn" | "dns" | "ipv4" | "ipv6" | "object-tags";
 
 /**
  * RDAP bootstrap metadata
@@ -265,28 +257,12 @@ export interface RdapBootstrapMetadata {
 /**
  * RDAP client options
  */
-export interface RdapClientOptions {
+export interface RdapOptions {
   /**
    * Base URL for RDAP service
    * If not provided, will use bootstrap service
    */
   baseUrl?: string;
-
-  /**
-   * Authentication token for RDAP service
-   */
-  authToken?: string;
-
-  /**
-   * Custom headers for RDAP request
-   */
-  headers?: Record<string, string>;
-
-  /**
-   * Whether to convert IDN domains to ASCII format
-   * @default true
-   */
-  convertIdn?: boolean;
 
   /**
    * Fetch options

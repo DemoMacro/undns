@@ -18,6 +18,7 @@ A modern RDAP (Registration Data Access Protocol) client implementation followin
 - 🚀 Minimal dependencies and small footprint
 - 🔒 Secure access support (HTTPS and authentication)
 - 📄 Pagination support for large responses
+- 🧩 Functional programming approach - pure functions only
 
 ## 📥 Installation
 
@@ -35,173 +36,223 @@ pnpm add rdap
 ## 🚀 Basic Usage
 
 ```typescript
-import { getRdapData } from "rdap";
+import {
+  queryRDAP,
+  queryDomain,
+  queryIP,
+  queryASN,
+  queryNameserver,
+  queryEntity,
+} from "rdap";
 
 // Query domain information
-const domainInfo = await getRdapData("dns", "example.com");
-// Returns: RdapDomainResponse with nameservers, status, events, etc.
+const domainInfo = await queryDomain("example.com");
+// Returns: RdapDomain with nameservers, status, events, etc.
 
 // Query IP information (IPv4)
-const ipv4Info = await getRdapData("ipv4", "8.8.8.8");
-// Returns: RdapIpResponse with network information, entities, etc.
+const ipv4Info = await queryIP("8.8.8.8");
+// Returns: RdapIpNetwork with network information, entities, etc.
 
 // Query IP information (IPv6)
-const ipv6Info = await getRdapData("ipv6", "2001:db8::1");
-// Returns: RdapIpResponse with network information, entities, etc.
+const ipv6Info = await queryIP("2001:db8::1");
+// Returns: RdapIpNetwork with network information, entities, etc.
 
 // Query ASN information
-const asnInfo = await getRdapData("asn", "15169");
-// Returns: RdapAsnResponse with ASN details, network range, etc.
+const asnInfo = await queryASN("15169");
+// Returns: RdapAutnum with ASN details, network range, etc.
 
 // Query nameserver information
-const nsInfo = await getRdapData("ns", "ns1.example.com");
-// Returns: RdapNameserverResponse with nameserver details, status, etc.
+const nsInfo = await queryNameserver("ns1.example.com");
+// Returns: RdapNameserver with nameserver details, status, etc.
 
 // Query entity information
-const entityInfo = await getRdapData("object-tags", "ABC123-EXAMPLE");
-// Returns: RdapEntityResponse with entity details, roles, etc.
+const entityInfo = await queryEntity("ABC123-EXAMPLE");
+// Returns: RdapEntity with entity details, roles, etc.
+
+// Generic query with options
+const data = await queryRDAP("example.com", {
+  baseUrl: "https://custom-rdap-server.com",
+  fetchOptions: {
+    headers: {
+      Authorization: "Bearer your-token",
+    },
+  },
+});
 ```
 
 ## 🔧 Advanced Usage
 
-### 🛠️ Using the RDAP Client Class
+### 🛠️ Using Custom RDAP Servers
 
 ```typescript
-import { RdapClient } from "rdap";
+import { queryRDAP } from "rdap";
 
-const client = new RdapClient({
-  // Optional configuration
-  timeout: 5000, // Request timeout in milliseconds
-  headers: {
-    // Custom headers
-    Authorization: "Bearer your-token",
-  },
-  fetchLatest: true, // Always fetch latest bootstrap data
+// Use a custom RDAP server
+const domainInfo = await queryRDAP("example.com", {
+  baseUrl: "https://rdap.nic.example",
 });
 
-// Query methods return typed responses
-const domainInfo = await client.queryDomain("example.com");
-const ipInfo = await client.queryIp("8.8.8.8");
-const asnInfo = await client.queryAsn("15169");
-const nsInfo = await client.queryNameserver("ns1.example.com");
-const entityInfo = await client.queryEntity("ABC123-EXAMPLE");
-
-// Search methods (if supported by server)
-const domains = await client.searchDomains({ name: "example" });
-const entities = await client.searchEntities({ fn: "John Doe" });
+// Use custom headers and authentication
+const domainInfo = await queryRDAP("example.com", {
+  fetchOptions: {
+    headers: {
+      "User-Agent": "MyApp/1.0",
+      "Accept-Language": "en-US",
+      Authorization: "Bearer your-token",
+    },
+  },
+});
 ```
 
-### ⚠️ Error Handling
-
-The package provides detailed error information through the `RdapClientError` class:
+### 🔍 Type Detection and Validation
 
 ```typescript
-import { RdapClient, RdapClientError } from "rdap";
+import { getQueryType, getBootstrapType, isDomain, isAsn } from "rdap";
 
-const client = new RdapClient();
+// Detect query type automatically
+const queryType = getQueryType("example.com"); // "domain"
+const queryType = getQueryType("8.8.8.8"); // "ip"
+const queryType = getQueryType("15169"); // "autnum"
 
-try {
-  const data = await client.queryDomain("example.com");
-} catch (error) {
-  if (error instanceof RdapClientError) {
-    console.error(
-      `RDAP query failed: ${error.message}`,
-      `Type: ${error.type}`,
-      `Query: ${error.query}`,
-      `Status: ${error.status}`,
-      error.cause,
-    );
+// Get bootstrap type for server discovery
+const bootstrapType = getBootstrapType("example.com"); // "dns"
+const bootstrapType = getBootstrapType("8.8.8.8"); // "ipv4"
+const bootstrapType = getBootstrapType("15169"); // "asn"
 
-    // Helper methods for common errors
-    if (error.isAuthenticationError()) {
-      // Handle authentication errors
-    }
-    if (error.isNotFoundError()) {
-      // Handle not found errors
-    }
-    if (error.isRateLimitError()) {
-      // Handle rate limit errors
-    }
-  }
-}
+// Validate input types
+console.log(isDomain("example.com")); // true
+console.log(isAsn("AS15169")); // true
+console.log(isAsn("15169")); // true
 ```
-
-#### Error Types
-
-| Error Type       | Description                        | HTTP Status |
-| ---------------- | ---------------------------------- | ----------- |
-| `NotFound`       | The requested object was not found | 404         |
-| `Authentication` | Authentication is required         | 401         |
-| `Authorization`  | Access is not authorized           | 403         |
-| `RateLimit`      | Rate limit exceeded                | 429         |
-| `InvalidQuery`   | The query format is invalid        | 400         |
-| `ServerError`    | Server-side error occurred         | 500         |
-| `Timeout`        | Request timed out                  | N/A         |
-| `Network`        | Network error occurred             | N/A         |
-| `Bootstrap`      | Error fetching bootstrap data      | N/A         |
 
 ### 🔄 Working with Bootstrap Data
 
 ```typescript
-import { getBootstrapMetadata, findBootstrapServer } from "rdap";
-
-// Get bootstrap metadata for a service type
-const metadata = await getBootstrapMetadata("dns", true); // true to fetch latest
+import { findBootstrapServer } from "rdap";
 
 // Find appropriate RDAP server for a query
 const serverUrl = await findBootstrapServer("dns", "example.com");
+console.log(serverUrl); // "https://rdap.verisign.com"
+
+const serverUrl = await findBootstrapServer("ipv4", "8.8.8.8");
+console.log(serverUrl); // "https://rdap.arin.net"
+```
+
+### ⚠️ Error Handling
+
+```typescript
+import { queryRDAP } from "rdap";
+
+try {
+  const data = await queryRDAP("nonexistent-domain.example");
+} catch (error) {
+  console.error(`RDAP query failed: ${error.message}`);
+
+  // Common error types:
+  if (error.message.includes("not found")) {
+    // Handle 404 errors
+  }
+  if (error.message.includes("rate limit")) {
+    // Handle 429 errors
+  }
+  if (error.message.includes("authentication failed")) {
+    // Handle 401/403 errors
+  }
+}
 ```
 
 ## 📚 API Reference
 
-### 🎯 RdapClient
+### 🔍 Query Functions
 
-The main class for making RDAP queries.
+#### `queryRDAP<T = RdapResponse>(query: string, options?: RdapOptions): Promise<T>`
 
-```typescript
-class RdapClient {
-  constructor(options?: RdapClientOptions);
+Generic RDAP query function with full configuration options.
 
-  // Query methods
-  queryDomain(domain: string): Promise<RdapDomainResponse>;
-  queryIp(ip: string): Promise<RdapIpResponse>;
-  queryAsn(asn: string | number): Promise<RdapAsnResponse>;
-  queryNameserver(nameserver: string): Promise<RdapNameserverResponse>;
-  queryEntity(handle: string): Promise<RdapEntityResponse>;
+**Parameters:**
 
-  // Search methods
-  searchDomains(params: SearchParams): Promise<RdapSearchResponse>;
-  searchNameservers(params: SearchParams): Promise<RdapSearchResponse>;
-  searchEntities(params: SearchParams): Promise<RdapSearchResponse>;
+- `query` - The query string (domain, IP, ASN, entity handle, etc.)
+- `options` - Optional configuration object
 
-  // Help method
-  help(): Promise<RdapHelpResponse>;
-}
-```
+**Returns:**
+
+- Promise resolving to the RDAP response
+
+#### `queryDomain<T = RdapDomain>(domain: string): Promise<T>`
+
+Query domain information.
+
+#### `queryIP<T = RdapIpNetwork>(ip: string): Promise<T>`
+
+Query IP network information.
+
+#### `queryASN<T = RdapAutnum>(asn: string): Promise<T>`
+
+Query autonomous system information.
+
+#### `queryNameserver<T = RdapNameserver>(nameserver: string): Promise<T>`
+
+Query nameserver information.
+
+#### `queryEntity<T = RdapEntity>(handle: string): Promise<T>`
+
+Query entity information.
+
+### 🔧 Utility Functions
+
+#### `getQueryType(query: string): RdapQueryType`
+
+Automatically detect the type of query based on input format.
+
+**Returns:** `"domain" | "nameserver" | "entity" | "ip" | "autnum" | "help"`
+
+#### `getBootstrapType(query: string): RdapBootstrapType`
+
+Get the bootstrap type for server discovery.
+
+**Returns:** `"asn" | "dns" | "ipv4" | "ipv6" | "object-tags"`
+
+#### `isDomain(value: string): boolean`
+
+Check if a string is a valid domain name.
+
+#### `isAsn(value: string): boolean`
+
+Check if a string is a valid ASN (supports both "AS15169" and "15169" formats).
+
+#### `formatAsn(value: string): string`
+
+Format ASN value to remove "AS" prefix if present.
+
+#### `convertToAscii(domain: string): string`
+
+Convert internationalized domain name (IDN) to ASCII format.
+
+#### `bootstrapTypeToQueryType(type: RdapBootstrapType): RdapQueryType`
+
+Convert bootstrap type to query type.
 
 ### 📋 Types
 
-The package exports comprehensive TypeScript types for all RDAP objects and responses:
+#### `RdapOptions`
+
+Configuration options for RDAP queries:
 
 ```typescript
-interface RdapResponse {
-  rdapConformance: string[];
-  notices?: Notice[];
-  links?: Link[];
-  // ...
+interface RdapOptions {
+  baseUrl?: string; // Custom RDAP server URL
+  fetchOptions?: RequestInit; // Fetch API options (headers, auth, etc.)
 }
-
-interface RdapDomainResponse extends RdapResponse {
-  handle: string;
-  ldhName: string;
-  unicodeName?: string;
-  variants?: Variant[];
-  nameservers?: Nameserver[];
-  // ...
-}
-
-// See types.ts for complete type definitions
 ```
+
+#### Response Types
+
+- `RdapDomain` - Domain information response
+- `RdapIpNetwork` - IP network information response
+- `RdapAutnum` - Autonomous system information response
+- `RdapNameserver` - Nameserver information response
+- `RdapEntity` - Entity information response
+- `RdapErrorResponse` - Error response
 
 ## 📖 Standards Compliance
 

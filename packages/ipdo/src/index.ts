@@ -5,7 +5,7 @@
 /**
  * Convert IPv4 address to 32-bit number
  */
-function ipv4ToInt(ip: string): number {
+export function ipv4ToInt(ip: string): number {
   return (
     ip
       .split(".")
@@ -16,7 +16,7 @@ function ipv4ToInt(ip: string): number {
 /**
  * Convert IPv6 address to BigInt
  */
-function ipv6ToBigInt(ip: string): bigint {
+export function ipv6ToBigInt(ip: string): bigint {
   return ip.split(":").reduce((int, hex) => {
     return (int << 16n) + BigInt(Number.parseInt(hex || "0", 16));
   }, 0n);
@@ -25,7 +25,7 @@ function ipv6ToBigInt(ip: string): bigint {
 /**
  * Check if string is valid IPv4 address
  */
-function isIPv4(ip: string): boolean {
+export function isIPv4(ip: string): boolean {
   const parts = ip.split(".");
   return (
     parts.length === 4 &&
@@ -39,7 +39,7 @@ function isIPv4(ip: string): boolean {
 /**
  * Check if string is valid IPv6 address
  */
-function isIPv6(ip: string): boolean {
+export function isIPv6(ip: string): boolean {
   const parts = ip.split(":");
   return (
     parts.length <= 8 &&
@@ -52,7 +52,7 @@ function isIPv6(ip: string): boolean {
 /**
  * Convert number to IPv4 address
  */
-function intToIPv4(int: number): string {
+export function intToIPv4(int: number): string {
   const octets = [];
   let num = int;
   for (let i = 3; i >= 0; i--) {
@@ -65,7 +65,7 @@ function intToIPv4(int: number): string {
 /**
  * Convert BigInt to IPv6 address
  */
-function bigIntToIPv6(int: bigint): string {
+export function bigIntToIPv6(int: bigint): string {
   const hex = int.toString(16).padStart(32, "0");
   const parts = [];
   for (let i = 0; i < 8; i++) {
@@ -74,363 +74,269 @@ function bigIntToIPv6(int: bigint): string {
   return parts.join(":");
 }
 
-export interface IPOptions {
-  /**
-   * IP version (4 or 6)
-   */
-  version?: 4 | 6;
+/**
+ * Check if a string is a valid IP address (IPv4 or IPv6)
+ */
+export function isValidIP(ip: string): boolean {
+  return isIPv4(ip) || isIPv6(ip);
 }
 
-export interface IPRange {
-  /**
-   * Check if an IP address is contained in the range
-   */
-  contains(ip: string): boolean;
-
-  /**
-   * Get the first IP address in the range
-   */
-  first(): string;
-
-  /**
-   * Get the last IP address in the range
-   */
-  last(): string;
-
-  /**
-   * Get the network mask
-   */
-  mask(): string;
-
-  /**
-   * Get the network prefix length
-   */
-  prefixLength(): number;
-
-  /**
-   * Get the total number of addresses in the range
-   */
-  size(): number | bigint;
-
-  /**
-   * Check if this range overlaps with another range
-   */
-  overlaps(other: IPRange): boolean;
-
-  /**
-   * Get the IP version (4 or 6)
-   */
-  version(): 4 | 6;
+/**
+ * Check if IPv4 address is private
+ */
+export function isPrivateIPv4(ip: string | number): boolean {
+  const value = typeof ip === "string" ? ipv4ToInt(ip) : ip;
+  return (
+    (value >= ipv4ToInt("10.0.0.0") && value <= ipv4ToInt("10.255.255.255")) ||
+    (value >= ipv4ToInt("172.16.0.0") &&
+      value <= ipv4ToInt("172.31.255.255")) ||
+    (value >= ipv4ToInt("192.168.0.0") && value <= ipv4ToInt("192.168.255.255"))
+  );
 }
 
-class IPRangeImpl implements IPRange {
-  private readonly cidr: string;
-  private readonly _version: 4 | 6;
-  private readonly prefix: number;
-  private readonly start: number | bigint;
-  private readonly end: number | bigint;
+/**
+ * Check if IPv4 address is loopback
+ */
+export function isLoopbackIPv4(ip: string | number): boolean {
+  const value = typeof ip === "string" ? ipv4ToInt(ip) : ip;
+  return (
+    value >= ipv4ToInt("127.0.0.0") && value <= ipv4ToInt("127.255.255.255")
+  );
+}
 
-  constructor(cidr: string, options: IPOptions = {}) {
-    this.cidr = cidr;
-    const [ip, prefixStr] = cidr.split("/");
+/**
+ * Check if IPv4 address is multicast
+ */
+export function isMulticastIPv4(ip: string | number): boolean {
+  const value = typeof ip === "string" ? ipv4ToInt(ip) : ip;
+  return (
+    value >= ipv4ToInt("224.0.0.0") && value <= ipv4ToInt("239.255.255.255")
+  );
+}
 
-    // Determine IP version
-    if (options.version) {
-      this._version = options.version;
-    } else {
-      if (isIPv4(ip)) this._version = 4;
-      else if (isIPv6(ip)) this._version = 6;
-      else throw new Error("Invalid IP address");
-    }
+/**
+ * Check if IPv6 address is private
+ */
+export function isPrivateIPv6(ip: string | bigint): boolean {
+  const value = typeof ip === "string" ? ipv6ToBigInt(ip) : ip;
+  return (
+    value >= ipv6ToBigInt("fc00::") &&
+    value <= ipv6ToBigInt("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+  );
+}
 
-    // Parse prefix length
-    this.prefix = Number.parseInt(prefixStr, 10);
-    if (this._version === 4 && (this.prefix < 0 || this.prefix > 32)) {
-      throw new Error("Invalid IPv4 prefix length");
-    }
-    if (this._version === 6 && (this.prefix < 0 || this.prefix > 128)) {
-      throw new Error("Invalid IPv6 prefix length");
-    }
+/**
+ * Check if IPv6 address is loopback
+ */
+export function isLoopbackIPv6(ip: string | bigint): boolean {
+  const value = typeof ip === "string" ? ipv6ToBigInt(ip) : ip;
+  return value === ipv6ToBigInt("::1");
+}
 
-    // Calculate start and end addresses
-    if (this._version === 4) {
+/**
+ * Check if IPv6 address is multicast
+ */
+export function isMulticastIPv6(ip: string | bigint): boolean {
+  const value = typeof ip === "string" ? ipv6ToBigInt(ip) : ip;
+  return (
+    value >= ipv6ToBigInt("ff00::") &&
+    value <= ipv6ToBigInt("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+  );
+}
+
+/**
+ * Get next IPv4 address
+ */
+export function nextIPv4(ip: string | number): string {
+  const value = typeof ip === "string" ? ipv4ToInt(ip) : ip;
+  return intToIPv4((value + 1) >>> 0);
+}
+
+/**
+ * Get previous IPv4 address
+ */
+export function prevIPv4(ip: string | number): string {
+  const value = typeof ip === "string" ? ipv4ToInt(ip) : ip;
+  return intToIPv4((value - 1) >>> 0);
+}
+
+/**
+ * Get next IPv6 address
+ */
+export function nextIPv6(ip: string | bigint): string {
+  const value = typeof ip === "string" ? ipv6ToBigInt(ip) : ip;
+  return bigIntToIPv6(value + 1n);
+}
+
+/**
+ * Get previous IPv6 address
+ */
+export function prevIPv6(ip: string | bigint): string {
+  const value = typeof ip === "string" ? ipv6ToBigInt(ip) : ip;
+  return bigIntToIPv6(value - 1n);
+}
+
+/**
+ * Convert IP address to binary string
+ */
+export function toBinary(ip: string): string {
+  if (isIPv4(ip)) {
+    return ipv4ToInt(ip).toString(2).padStart(32, "0");
+  }
+  if (isIPv6(ip)) {
+    return ipv6ToBigInt(ip).toString(2).padStart(128, "0");
+  }
+  throw new Error("Invalid IP address");
+}
+
+/**
+ * Convert IP address to numeric value
+ */
+export function toNumber(ip: string): number | bigint {
+  if (isIPv4(ip)) {
+    return ipv4ToInt(ip);
+  }
+  if (isIPv6(ip)) {
+    return ipv6ToBigInt(ip);
+  }
+  throw new Error("Invalid IP address");
+}
+
+/**
+ * Parse CIDR notation to range information
+ */
+export function parseCIDR(cidr: string): {
+  start: number | bigint;
+  end: number | bigint;
+  prefix: number;
+  version: 4 | 6;
+} {
+  const [ip, prefixStr] = cidr.split("/");
+
+  // Determine IP version
+  let version: 4 | 6;
+  if (isIPv4(ip)) {
+    version = 4;
+  } else if (isIPv6(ip)) {
+    version = 6;
+  } else {
+    throw new Error("Invalid IP address in CIDR");
+  }
+
+  // Parse prefix length
+  const prefix = Number.parseInt(prefixStr, 10);
+  if (version === 4 && (prefix < 0 || prefix > 32)) {
+    throw new Error("Invalid IPv4 prefix length");
+  }
+  if (version === 6 && (prefix < 0 || prefix > 128)) {
+    throw new Error("Invalid IPv6 prefix length");
+  }
+
+  // Calculate start and end addresses
+  if (version === 4) {
+    const ipInt = ipv4ToInt(ip);
+    const mask = ~((1 << (32 - prefix)) - 1) >>> 0;
+    const start = ipInt & mask;
+    const end = start + ((1 << (32 - prefix)) - 1);
+    return { start, end, prefix, version };
+  } else {
+    const ipBigInt = ipv6ToBigInt(ip);
+    const mask = ~((1n << BigInt(128 - prefix)) - 1n);
+    const start = ipBigInt & mask;
+    const end = start + ((1n << BigInt(128 - prefix)) - 1n);
+    return { start, end, prefix, version };
+  }
+}
+
+/**
+ * Check if IP address is in CIDR range
+ */
+export function ipInRange(cidr: string, ip: string): boolean {
+  try {
+    const range = parseCIDR(cidr);
+    if (range.version === 4 && !isIPv4(ip)) return false;
+    if (range.version === 6 && !isIPv6(ip)) return false;
+
+    if (range.version === 4) {
       const ipInt = ipv4ToInt(ip);
-      const mask = ~((1 << (32 - this.prefix)) - 1) >>> 0;
-      this.start = ipInt & mask;
-      this.end = this.start + ((1 << (32 - this.prefix)) - 1);
+      return ipInt >= (range.start as number) && ipInt <= (range.end as number);
     } else {
       const ipBigInt = ipv6ToBigInt(ip);
-      const mask = ~((1n << BigInt(128 - this.prefix)) - 1n);
-      this.start = ipBigInt & mask;
-      this.end = this.start + ((1n << BigInt(128 - this.prefix)) - 1n);
-    }
-  }
-
-  contains(ip: string): boolean {
-    try {
-      if (this._version === 4) {
-        if (!isIPv4(ip)) return false;
-        const ipInt = ipv4ToInt(ip);
-        return ipInt >= this.start && ipInt <= this.end;
-      }
-      if (!isIPv6(ip)) return false;
-      const ipBigInt = ipv6ToBigInt(ip);
-      return ipBigInt >= this.start && ipBigInt <= this.end;
-    } catch {
-      return false;
-    }
-  }
-
-  first(): string {
-    if (this._version === 4) {
-      return intToIPv4(this.start as number);
-    }
-    return bigIntToIPv6(this.start as bigint);
-  }
-
-  last(): string {
-    if (this._version === 4) {
-      return intToIPv4(this.end as number);
-    }
-    return bigIntToIPv6(this.end as bigint);
-  }
-
-  mask(): string {
-    if (this._version === 4) {
-      const mask = ~((1 << (32 - this.prefix)) - 1) >>> 0;
-      return intToIPv4(mask);
-    }
-    const mask = ~((1n << BigInt(128 - this.prefix)) - 1n);
-    return bigIntToIPv6(mask);
-  }
-
-  prefixLength(): number {
-    return this.prefix;
-  }
-
-  size(): number | bigint {
-    if (this._version === 4) {
-      return (this.end as number) - (this.start as number) + 1;
-    }
-    return (this.end as bigint) - (this.start as bigint) + 1n;
-  }
-
-  overlaps(other: IPRange): boolean {
-    if (this._version !== other.version()) return false;
-    if (this._version === 4) {
-      const otherImpl = other as IPRangeImpl;
       return (
-        (this.start as number) <= (otherImpl.end as number) &&
-        (this.end as number) >= (otherImpl.start as number)
+        ipBigInt >= (range.start as bigint) && ipBigInt <= (range.end as bigint)
       );
     }
-    const otherImpl = other as IPRangeImpl;
-    return (
-      (this.start as bigint) <= (otherImpl.end as bigint) &&
-      (this.end as bigint) >= (otherImpl.start as bigint)
-    );
-  }
-
-  version(): 4 | 6 {
-    return this._version;
+  } catch {
+    return false;
   }
 }
 
-export interface IPAddress {
-  /**
-   * Get the IP version (4 or 6)
-   */
-  version(): 4 | 6;
-
-  /**
-   * Convert to string representation
-   */
-  toString(): string;
-
-  /**
-   * Convert to binary string
-   */
-  toBinary(): string;
-
-  /**
-   * Convert to numeric value
-   */
-  toNumber(): number | bigint;
-
-  /**
-   * Check if this is a private address
-   */
-  isPrivate(): boolean;
-
-  /**
-   * Check if this is a loopback address
-   */
-  isLoopback(): boolean;
-
-  /**
-   * Check if this is a multicast address
-   */
-  isMulticast(): boolean;
-
-  /**
-   * Get the next IP address
-   */
-  next(): IPAddress;
-
-  /**
-   * Get the previous IP address
-   */
-  prev(): IPAddress;
+/**
+ * Get first IP address in CIDR range
+ */
+export function firstIPInRange(cidr: string): string {
+  const range = parseCIDR(cidr);
+  if (range.version === 4) {
+    return intToIPv4(range.start as number);
+  }
+  return bigIntToIPv6(range.start as bigint);
 }
 
-class IPv4Impl implements IPAddress {
-  private readonly value: number;
-
-  constructor(ip: string | number) {
-    if (typeof ip === "string") {
-      if (!isIPv4(ip)) throw new Error("Invalid IPv4 address");
-      this.value = ipv4ToInt(ip);
-    } else {
-      this.value = ip >>> 0;
-    }
+/**
+ * Get last IP address in CIDR range
+ */
+export function lastIPInRange(cidr: string): string {
+  const range = parseCIDR(cidr);
+  if (range.version === 4) {
+    return intToIPv4(range.end as number);
   }
-
-  version(): 4 | 6 {
-    return 4;
-  }
-
-  toString(): string {
-    return intToIPv4(this.value);
-  }
-
-  toBinary(): string {
-    return this.value.toString(2).padStart(32, "0");
-  }
-
-  toNumber(): number {
-    return this.value;
-  }
-
-  isPrivate(): boolean {
-    return (
-      (this.value >= ipv4ToInt("10.0.0.0") &&
-        this.value <= ipv4ToInt("10.255.255.255")) ||
-      (this.value >= ipv4ToInt("172.16.0.0") &&
-        this.value <= ipv4ToInt("172.31.255.255")) ||
-      (this.value >= ipv4ToInt("192.168.0.0") &&
-        this.value <= ipv4ToInt("192.168.255.255"))
-    );
-  }
-
-  isLoopback(): boolean {
-    return (
-      this.value >= ipv4ToInt("127.0.0.0") &&
-      this.value <= ipv4ToInt("127.255.255.255")
-    );
-  }
-
-  isMulticast(): boolean {
-    return (
-      this.value >= ipv4ToInt("224.0.0.0") &&
-      this.value <= ipv4ToInt("239.255.255.255")
-    );
-  }
-
-  next(): IPAddress {
-    return new IPv4Impl(this.value + 1);
-  }
-
-  prev(): IPAddress {
-    return new IPv4Impl(this.value - 1);
-  }
+  return bigIntToIPv6(range.end as bigint);
 }
 
-class IPv6Impl implements IPAddress {
-  private readonly value: bigint;
-
-  constructor(ip: string | bigint) {
-    if (typeof ip === "string") {
-      if (!isIPv6(ip)) throw new Error("Invalid IPv6 address");
-      this.value = ipv6ToBigInt(ip);
-    } else {
-      this.value = ip;
-    }
+/**
+ * Get network mask for CIDR
+ */
+export function maskForCIDR(cidr: string): string {
+  const range = parseCIDR(cidr);
+  if (range.version === 4) {
+    const mask = ~((1 << (32 - range.prefix)) - 1) >>> 0;
+    return intToIPv4(mask);
   }
-
-  version(): 4 | 6 {
-    return 6;
-  }
-
-  toString(): string {
-    return bigIntToIPv6(this.value);
-  }
-
-  toBinary(): string {
-    return this.value.toString(2).padStart(128, "0");
-  }
-
-  toNumber(): bigint {
-    return this.value;
-  }
-
-  isPrivate(): boolean {
-    return (
-      this.value >= ipv6ToBigInt("fc00::") &&
-      this.value <= ipv6ToBigInt("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
-    );
-  }
-
-  isLoopback(): boolean {
-    return this.value === ipv6ToBigInt("::1");
-  }
-
-  isMulticast(): boolean {
-    return (
-      this.value >= ipv6ToBigInt("ff00::") &&
-      this.value <= ipv6ToBigInt("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
-    );
-  }
-
-  next(): IPAddress {
-    return new IPv6Impl(this.value + 1n);
-  }
-
-  prev(): IPAddress {
-    return new IPv6Impl(this.value - 1n);
-  }
+  const mask = ~((1n << BigInt(128 - range.prefix)) - 1n);
+  return bigIntToIPv6(mask);
 }
 
-export const IP = {
-  /**
-   * Create a new IP range from CIDR notation
-   */
-  range(cidr: string, options?: IPOptions): IPRange {
-    return new IPRangeImpl(cidr, options);
-  },
+/**
+ * Get total number of addresses in CIDR range
+ */
+export function rangeSize(cidr: string): number | bigint {
+  const range = parseCIDR(cidr);
+  if (range.version === 4) {
+    return (range.end as number) - (range.start as number) + 1;
+  }
+  return (range.end as bigint) - (range.start as bigint) + 1n;
+}
 
-  /**
-   * Parse an IP address
-   */
-  parse(ip: string): IPAddress {
-    if (isIPv4(ip)) return new IPv4Impl(ip);
-    if (isIPv6(ip)) return new IPv6Impl(ip);
-    throw new Error("Invalid IP address");
-  },
+/**
+ * Check if two CIDR ranges overlap
+ */
+export function rangesOverlap(cidr1: string, cidr2: string): boolean {
+  const range1 = parseCIDR(cidr1);
+  const range2 = parseCIDR(cidr2);
 
-  /**
-   * Check if a string is a valid IP address
-   */
-  isValid(ip: string): boolean {
-    return isIPv4(ip) || isIPv6(ip);
-  },
+  if (range1.version !== range2.version) {
+    return false;
+  }
 
-  /**
-   * Check if a string is a valid IPv4 address
-   */
-  isIPv4,
+  if (range1.version === 4) {
+    return (
+      (range1.start as number) <= (range2.end as number) &&
+      (range1.end as number) >= (range2.start as number)
+    );
+  }
 
-  /**
-   * Check if a string is a valid IPv6 address
-   */
-  isIPv6,
-};
+  return (
+    (range1.start as bigint) <= (range2.end as bigint) &&
+    (range1.end as bigint) >= (range2.start as bigint)
+  );
+}

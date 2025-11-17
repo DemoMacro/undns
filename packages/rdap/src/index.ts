@@ -4,64 +4,42 @@
  * @see https://www.icann.org/rdap
  */
 
-import { IP } from "ipdo";
 import { ofetch } from "ofetch";
-import { dns, asn, ipv4, ipv6, objectTags } from "./bootstrap/data";
+import type { FetchError } from "ofetch";
+import { ipInRange } from "ipdo";
+import { asn, dns, ipv4, ipv6, objectTags } from "./bootstrap/data";
+import {
+  RdapBootstrapType,
+  RdapBootstrapMetadata,
+  RdapQueryType,
+  RdapOptions,
+  RdapResponse,
+  RdapDomain,
+  RdapNameserver,
+  RdapEntity,
+  RdapIpNetwork,
+  RdapAutnum,
+} from "./types";
+import {
+  formatAsn,
+  getQueryType,
+  getBootstrapType,
+  bootstrapTypeToQueryType,
+  convertToAscii,
+} from "./utils";
 
 /**
- * RDAP metadata interface as defined by IANA
- * @see https://www.iana.org/assignments/rdap-json-values/rdap-json-values.xhtml
+ * Get bootstrap metadata from IANA
  */
-export interface RdapMetadata {
-  description: string;
-  publication: string;
-  services: Array<Array<Array<string>>>;
-  version: string;
-}
-
-/**
- * RDAP query types
- */
-export type RdapMetadataType =
-  | "asn" // Autonomous System Numbers
-  | "dns" // Domain names
-  | "ns" // Nameservers
-  | "ipv4" // IPv4 addresses
-  | "ipv6" // IPv6 addresses
-  | "object-tags"; // Entity handles and other identifiers
-
-/**
- * Error thrown when RDAP query fails
- */
-export class RdapError extends Error {
-  constructor(
-    message: string,
-    public readonly type: RdapMetadataType,
-    public readonly query: string,
-    public readonly cause?: unknown,
-  ) {
-    super(message);
-    this.name = "RdapError";
-  }
-}
-
-/**
- * Get RDAP metadata from IANA
- * @param type Type of RDAP service
- * @param fetch Whether to fetch fresh data from IANA (default: false)
- * @returns RDAP metadata
- * @throws {RdapError} If metadata fetch fails
- */
-export async function getRdapMetadata(
-  type: RdapMetadataType,
+async function getBootstrapMetadata(
+  type: RdapBootstrapType,
   fetch = false,
-): Promise<RdapMetadata> {
+): Promise<RdapBootstrapMetadata> {
   try {
     if (!fetch) {
-      const metadata: Record<RdapMetadataType, RdapMetadata> = {
+      const metadata: Record<RdapBootstrapType, RdapBootstrapMetadata> = {
         asn,
         dns,
-        ns: dns,
         ipv4,
         ipv6,
         "object-tags": objectTags,
@@ -69,59 +47,48 @@ export async function getRdapMetadata(
       return metadata[type];
     }
 
-    return await ofetch<RdapMetadata>(
+    return await ofetch<RdapBootstrapMetadata>(
       `https://data.iana.org/rdap/${type}.json`,
       {
         parseResponse: JSON.parse,
       },
     );
   } catch (error) {
-    throw new RdapError(
-      `Failed to get RDAP metadata for ${type}`,
-      type,
-      "metadata",
-      error,
+    throw new Error(
+      `Failed to get bootstrap metadata for ${type}: ${String(error)}`,
     );
   }
 }
 
 /**
- * Get RDAP server URL for a query
- * @param type Type of RDAP service
- * @param query Query string (domain, IP, ASN, etc.)
- * @returns Full RDAP server URL for the query
- * @throws {RdapError} If no matching server is found
+ * Find RDAP server for a query
  */
-export async function getRdapServer(
-  type: RdapMetadataType,
+async function findBootstrapServer(
+  type: RdapBootstrapType,
   query: string,
 ): Promise<string> {
   try {
-    const metadata = await getRdapMetadata(type);
+    const metadata = await getBootstrapMetadata(type);
 
-    const suffix: Record<RdapMetadataType, string> = {
-      asn: "autnum",
-      dns: "domain",
-      ns: "nameserver",
-      ipv4: "ip",
-      ipv6: "ip",
-      "object-tags": "entity",
-    };
-
-    const service = metadata.services.find((service) =>
-      service?.[0].some((c) => {
+    const service = metadata.services.find(([patterns]) =>
+      patterns.some((pattern) => {
         try {
-          if (type === "dns") return c === query.split(".").pop();
-          if (type === "ipv4" || type === "ipv6") {
-            return IP.range(c).contains(query);
+          switch (type) {
+            case "dns":
+              return pattern === query.split(".").pop();
+            case "ipv4":
+            case "ipv6":
+              return ipInRange(pattern, query);
+            case "asn": {
+              const [start, end] = pattern.split("-").map(Number);
+              const queryNum = Number(formatAsn(query));
+              return queryNum >= start && queryNum <= end;
+            }
+            case "object-tags":
+              return pattern === query;
+            default:
+              return false;
           }
-          if (type === "asn") {
-            const [start, end] = c.split("-").map(Number);
-            const queryNum = Number(query);
-            return queryNum >= start && queryNum <= end;
-          }
-          if (type === "object-tags") return c === query;
-          return false;
         } catch {
           return false;
         }
@@ -129,55 +96,105 @@ export async function getRdapServer(
     );
 
     if (!service) {
-      throw new RdapError(
-        `No RDAP server found for ${type} query: ${query}`,
-        type,
-        query,
-      );
+      throw new Error(`No RDAP server found for ${type} query: ${query}`);
     }
 
-    return `${service[service.length - 1][0]}${suffix[type]}/${query}`;
+    return service[service.length - 1][0];
   } catch (error) {
-    if (error instanceof RdapError) throw error;
-    throw new RdapError(
-      `Failed to get RDAP server for ${type} query: ${query}`,
-      type,
-      query,
-      error,
+    throw new Error(
+      `Failed to find RDAP server for ${type} query: ${query}: ${String(error)}`,
     );
   }
 }
 
 /**
- * Get RDAP data for a query
- * @param type Type of RDAP service
- * @param query Query string (domain, IP, ASN, etc.)
- * @returns RDAP response data
- * @throws {RdapError} If query fails
+ * Get server URL for a query
  */
-export async function getRdapData(
-  type: RdapMetadataType,
+async function getServerUrl(
   query: string,
-): Promise<unknown> {
+  type?: RdapQueryType,
+  options?: RdapOptions,
+): Promise<string> {
+  // If base URL is provided, use it
+  if (options?.baseUrl) {
+    const baseUrl = options.baseUrl.replace(/\/$/, "");
+    const queryType = type ?? getQueryType(query);
+    return `${baseUrl}/${queryType}/${query}`;
+  }
+
+  // Otherwise, use bootstrap service
+  const bootstrapType = getBootstrapType(query);
+  const baseUrl = (await findBootstrapServer(bootstrapType, query)).replace(
+    /\//,
+    "",
+  );
+  const finalType = bootstrapTypeToQueryType(bootstrapType);
+
+  return `${baseUrl}/${finalType}/${query}`;
+}
+
+/**
+ * Query RDAP data
+ */
+export async function queryRDAP<T = RdapResponse>(
+  query: string,
+  options: RdapOptions = {},
+): Promise<T> {
   try {
-    const url = await getRdapServer(type, query);
-    return await ofetch(url, {
+    // Convert IDN domain to ASCII
+    const normalizedQuery = options?.baseUrl ? query : convertToAscii(query);
+
+    // Get server URL
+    const url = await getServerUrl(normalizedQuery, undefined, options);
+
+    // Make request
+    const response = await ofetch<T>(url, {
       headers: {
         Accept: "application/rdap+json",
       },
+      ...options?.fetchOptions,
     });
+
+    return response;
   } catch (error) {
-    if (error instanceof RdapError) throw error;
-    throw new RdapError(
-      `Failed to get RDAP data for ${type} query: ${query}`,
-      type,
-      query,
-      error,
-    );
+    const fetchError = error as FetchError;
+    const statusCode = fetchError?.response?.status;
+
+    if (statusCode === 404) {
+      throw new Error(`RDAP resource not found: ${query}`);
+    }
+    if (statusCode === 429) {
+      throw new Error(`RDAP rate limit exceeded for: ${query}`);
+    }
+    if (statusCode === 401 || statusCode === 403) {
+      throw new Error(`RDAP authentication failed for: ${query}`);
+    }
+
+    throw new Error(`RDAP query failed for ${query}: ${String(error)}`);
   }
 }
 
-export * from "./types";
-export * from "./client";
-export * from "./bootstrap";
-export * from "./utils";
+/**
+ * Convenience functions for specific query types
+ */
+export async function queryDomain<T = RdapDomain>(domain: string): Promise<T> {
+  return queryRDAP<T>(domain);
+}
+
+export async function queryNameserver<T = RdapNameserver>(
+  nameserver: string,
+): Promise<T> {
+  return queryRDAP<T>(nameserver);
+}
+
+export async function queryEntity<T = RdapEntity>(handle: string): Promise<T> {
+  return queryRDAP<T>(handle);
+}
+
+export async function queryIP<T = RdapIpNetwork>(ip: string): Promise<T> {
+  return queryRDAP<T>(ip);
+}
+
+export async function queryASN<T = RdapAutnum>(asn: string): Promise<T> {
+  return queryRDAP<T>(asn);
+}

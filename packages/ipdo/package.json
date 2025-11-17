@@ -1,6 +1,6 @@
 {
   "name": "ipdo",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A powerful and efficient IP address manipulation library",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",

@@ -48,6 +48,24 @@ const hasMxRecord = await dns.hasRecord("example.com", { type: "MX" });
 console.log("Has MX record:", hasMxRecord);
 ```
 
+### DNS over HTTPS (DOH)
+
+```typescript
+import { createDNSManager } from "undns";
+import dohDriver from "undns/drivers/doh";
+
+// Create DNS manager with DOH driver
+const dns = createDNSManager({
+  driver: dohDriver({
+    endpoint: "https://one.one.one.one/dns-query",
+  }),
+});
+
+// Query DNS records over HTTPS
+const records = await dns.getRecords("example.com");
+console.log(`Found ${records.length} records via DOH`);
+```
+
 ### Development
 
 ```bash
