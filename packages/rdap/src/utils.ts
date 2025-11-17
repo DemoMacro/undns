@@ -20,7 +20,13 @@ export function convertToAscii(domain: string): string {
  */
 export function bootstrapTypeToQueryType(
   type: RdapBootstrapType,
+  queryType?: RdapQueryType,
 ): RdapQueryType {
+  // If query type is explicitly specified, use it
+  if (queryType) {
+    return queryType;
+  }
+
   switch (type) {
     case "asn":
       return "autnum";
@@ -58,8 +64,8 @@ export function formatAsn(value: string): string {
  */
 export function isDomain(value: string): boolean {
   try {
-    new URL(`http://${value}`);
-    return true;
+    const url = new URL(`http://${value}`);
+    return url.hostname === value;
   } catch {
     return false;
   }
@@ -72,11 +78,11 @@ export function getQueryType(query: string): RdapQueryType {
   // Import from ipdo to avoid duplication
   const { isValidIP } = require("ipdo");
 
-  if (isValidIP(query)) {
-    return "ip";
-  }
   if (isAsn(query)) {
     return "autnum";
+  }
+  if (isValidIP(query)) {
+    return "ip";
   }
   if (isDomain(query)) {
     return "domain";
@@ -91,14 +97,14 @@ export function getBootstrapType(query: string): RdapBootstrapType {
   // Import from ipdo to avoid duplication
   const { isIPv4, isIPv6 } = require("ipdo");
 
+  if (isAsn(query)) {
+    return "asn";
+  }
   if (isIPv4(query)) {
     return "ipv4";
   }
   if (isIPv6(query)) {
     return "ipv6";
-  }
-  if (isAsn(query)) {
-    return "asn";
   }
   if (isDomain(query)) {
     return "dns";

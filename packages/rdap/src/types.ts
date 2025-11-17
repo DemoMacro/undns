@@ -209,6 +209,18 @@ export interface RdapAutnum extends RdapCommon {
 }
 
 /**
+ * RDAP help response
+ */
+export interface RdapHelp extends RdapCommon {
+  objectClassName: "help";
+  reverse_search_properties?: Array<{
+    searchableResourceType: string;
+    relatedResourceType: string;
+    property: string;
+  }>;
+}
+
+/**
  * RDAP error
  */
 export interface RdapErrorResponse extends RdapCommon {
@@ -226,7 +238,8 @@ export type RdapResponse =
   | RdapNameserver
   | RdapEntity
   | RdapIpNetwork
-  | RdapAutnum;
+  | RdapAutnum
+  | RdapHelp;
 
 /**
  * RDAP query types
@@ -263,6 +276,12 @@ export interface RdapOptions {
    * If not provided, will use bootstrap service
    */
   baseUrl?: string;
+
+  /**
+   * Query type
+   * If not provided, will auto-detect based on query format
+   */
+  type?: RdapQueryType;
 
   /**
    * Fetch options

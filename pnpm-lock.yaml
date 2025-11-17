@@ -48,6 +48,12 @@ importers:
 
   playground:
     dependencies:
+      ipdo:
+        specifier: workspace:*
+        version: link:../packages/ipdo
+      rdap:
+        specifier: workspace:*
+        version: link:../packages/rdap
       undns:
         specifier: workspace:*
         version: link:../packages/undns

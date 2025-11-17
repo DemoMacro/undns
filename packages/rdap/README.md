@@ -43,6 +43,7 @@ import {
   queryASN,
   queryNameserver,
   queryEntity,
+  queryHelp,
 } from "rdap";
 
 // Query domain information
@@ -66,21 +67,34 @@ const nsInfo = await queryNameserver("ns1.example.com");
 // Returns: RdapNameserver with nameserver details, status, etc.
 
 // Query entity information
-const entityInfo = await queryEntity("ABC123-EXAMPLE");
+const entityInfo = await queryEntity("GOGL");
 // Returns: RdapEntity with entity details, roles, etc.
 
 // Query help information
 const helpInfo = await queryHelp();
-// Returns: RDAP server help and capability information
+// Returns: RdapHelp with RDAP server capabilities and reverse search properties
 
 // Generic query with options
 const data = await queryRDAP("example.com", {
   baseUrl: "https://custom-rdap-server.com",
+  type: "domain", // Explicitly specify query type
   fetchOptions: {
     headers: {
       Authorization: "Bearer your-token",
     },
   },
+});
+
+// All convenience functions also support options
+const domainWithCustomServer = await queryDomain("example.com", {
+  baseUrl: "https://custom-rdap-server.com",
+  fetchOptions: {
+    headers: { "User-Agent": "MyApp/1.0" },
+  },
+});
+
+const nameserverWithType = await queryNameserver("ns1.example.com", {
+  type: "nameserver", // Explicitly specify nameserver query
 });
 ```
 
@@ -177,34 +191,37 @@ Generic RDAP query function with full configuration options.
 
 - `query` - The query string (domain, IP, ASN, entity handle, etc.)
 - `options` - Optional configuration object
+  - `baseUrl?` - Custom RDAP server URL
+  - `type?` - Explicit query type (overrides auto-detection)
+  - `fetchOptions?` - Fetch API options (headers, auth, etc.)
 
 **Returns:**
 
 - Promise resolving to the RDAP response
 
-#### `queryDomain<T = RdapDomain>(domain: string): Promise<T>`
+#### `queryDomain<T = RdapDomain>(domain: string, options?: RdapOptions): Promise<T>`
 
-Query domain information.
+Query domain information with optional configuration.
 
-#### `queryIP<T = RdapIpNetwork>(ip: string): Promise<T>`
+#### `queryIP<T = RdapIpNetwork>(ip: string, options?: RdapOptions): Promise<T>`
 
-Query IP network information.
+Query IP network information with optional configuration.
 
-#### `queryASN<T = RdapAutnum>(asn: string): Promise<T>`
+#### `queryASN<T = RdapAutnum>(asn: string, options?: RdapOptions): Promise<T>`
 
-Query autonomous system information.
+Query autonomous system information with optional configuration.
 
-#### `queryNameserver<T = RdapNameserver>(nameserver: string): Promise<T>`
+#### `queryNameserver<T = RdapNameserver>(nameserver: string, options?: RdapOptions): Promise<T>`
 
-Query nameserver information.
+Query nameserver information with optional configuration.
 
-#### `queryEntity<T = RdapEntity>(handle: string): Promise<T>`
+#### `queryEntity<T = RdapEntity>(handle: string, options?: RdapOptions): Promise<T>`
 
-Query entity information.
+Query entity information with optional configuration.
 
-#### `queryHelp(): Promise<any>`
+#### `queryHelp<T = RdapHelp>(options?: RdapOptions): Promise<T>`
 
-Query RDAP help information from the server.
+Query RDAP help information from the server. Returns server capabilities, conformance levels, and reverse search properties.
 
 ### 🔧 Utility Functions
 
@@ -236,9 +253,9 @@ Format ASN value to remove "AS" prefix if present.
 
 Convert internationalized domain name (IDN) to ASCII format.
 
-#### `bootstrapTypeToQueryType(type: RdapBootstrapType): RdapQueryType`
+#### `bootstrapTypeToQueryType(type: RdapBootstrapType, queryType?: RdapQueryType): RdapQueryType`
 
-Convert bootstrap type to query type.
+Convert bootstrap type to query type. Optionally accepts explicit query type to override default mapping.
 
 ### 📋 Types
 
@@ -249,6 +266,7 @@ Configuration options for RDAP queries:
 ```typescript
 interface RdapOptions {
   baseUrl?: string; // Custom RDAP server URL
+  type?: RdapQueryType; // Explicit query type (overrides auto-detection)
   fetchOptions?: RequestInit; // Fetch API options (headers, auth, etc.)
 }
 ```
@@ -260,6 +278,7 @@ interface RdapOptions {
 - `RdapAutnum` - Autonomous system information response
 - `RdapNameserver` - Nameserver information response
 - `RdapEntity` - Entity information response
+- `RdapHelp` - Help and server capabilities response
 - `RdapErrorResponse` - Error response
 
 ## 📖 Standards Compliance

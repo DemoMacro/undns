@@ -1,6 +1,6 @@
 {
   "name": "rdap",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A modern RDAP (Registration Data Access Protocol) client.",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",

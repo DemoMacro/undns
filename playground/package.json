@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "ipdo": "workspace:*",
+    "rdap": "workspace:*",
     "undns": "workspace:*"
   }
 }
