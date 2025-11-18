@@ -1,7 +1,7 @@
 {
   "name": "axis-monorepo",
   "version": "0.0.0",
-  "description": "Unified network toolkit for IP address manipulation, RDAP operations, and DNS management",
+  "description": "Unified network toolkit featuring IP manipulation, RDAP client/server, DNS management with DoH support",
   "private": true,
   "scripts": {
     "dev": "pnpm -r dev",
@@ -15,13 +15,21 @@
   },
   "keywords": [
     "dns",
+    "rdap",
+    "ip",
+    "network",
     "dns-management",
+    "doh",
     "cloudflare",
     "vercel",
     "dnspod",
     "domain",
     "records",
-    "typescript"
+    "typescript",
+    "h3",
+    "cidr",
+    "ipv4",
+    "ipv6"
   ],
   "author": {
     "name": "Demo Macro",

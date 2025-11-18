@@ -216,7 +216,7 @@ console.log(isAsn("15169")); // true
 ### 🔄 Working with Bootstrap Data
 
 ```typescript
-import { findBootstrapServer } from "rdap";
+import { findBootstrapServer, getBootstrapMetadata } from "rdap";
 
 // Find appropriate RDAP server for a query
 const serverUrl = await findBootstrapServer("dns", "example.com");
@@ -224,6 +224,13 @@ console.log(serverUrl); // "https://rdap.verisign.com"
 
 const serverUrl = await findBootstrapServer("ipv4", "8.8.8.8");
 console.log(serverUrl); // "https://rdap.arin.net"
+
+// Get bootstrap metadata for offline usage
+const metadata = await getBootstrapMetadata("ipv4");
+console.log(metadata.servers); // Available IPv4 RDAP servers
+
+// Force refresh bootstrap data
+const freshMetadata = await getBootstrapMetadata("dns", true);
 ```
 
 ### ⚠️ Error Handling
@@ -355,6 +362,29 @@ Convert internationalized domain name (IDN) to ASCII format.
 #### `bootstrapTypeToQueryType(type: RdapBootstrapType, queryType?: RdapQueryType): RdapQueryType`
 
 Convert bootstrap type to query type. Optionally accepts explicit query type to override default mapping.
+
+#### `findBootstrapServer(type: RdapBootstrapType, query: string): Promise<string>`
+
+Find appropriate RDAP server for a given query type and query string.
+
+**Returns:** Promise resolving to the RDAP server URL
+
+#### `getBootstrapMetadata(type: RdapBootstrapType, fetch?: boolean): Promise<RdapBootstrapMetadata>`
+
+Get bootstrap metadata for RDAP server discovery. Supports offline usage with cached data.
+
+**Parameters:**
+
+- `type` - Bootstrap type ("asn" | "dns" | "ipv4" | "ipv6" | "object-tags")
+- `fetch` - Force refresh bootstrap data from IANA (default: false)
+
+**Returns:** Promise resolving to bootstrap metadata with server listings
+
+#### `getServerUrl(query: string, type?: RdapQueryType, options?: RdapOptions): Promise<string>`
+
+Build complete RDAP query URL with automatic server discovery.
+
+**Returns:** Promise resolving to the full RDAP query URL
 
 ### 📋 Types
 

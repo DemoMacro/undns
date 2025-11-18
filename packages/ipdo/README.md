@@ -12,6 +12,7 @@ A powerful and efficient IP address manipulation library.
   - 🔄 Binary and numeric conversions
   - 🏷️ IP address type detection (private, loopback, multicast)
   - ➕ IP address arithmetic
+  - 📦 ArrayBuffer conversions for network protocols
 - 🚀 Zero dependencies
 - 📝 TypeScript support
 - 🛡️ Comprehensive error handling
@@ -46,6 +47,10 @@ import {
   lastIPInRange,
   maskForCIDR,
   rangeSize,
+  ipv4ToBuffer,
+  ipv6ToBuffer,
+  bufferToIPv4,
+  bufferToIPv6,
 } from "ipdo";
 
 // IP address validation
@@ -130,6 +135,27 @@ console.log(toBinary("192.168.0.1")); // '11000000101010000000000000000001'
 console.log(toNumber("192.168.0.1")); // 3232235521
 ```
 
+### 🔄 Buffer Conversions
+
+```typescript
+import { ipv4ToBuffer, ipv6ToBuffer, bufferToIPv4, bufferToIPv6 } from "ipdo";
+
+// IPv4 buffer conversions
+const ipv4Buffer = ipv4ToBuffer("192.168.0.1"); // ArrayBuffer (4 bytes)
+console.log(ipv4Buffer.byteLength); // 4
+const ipv4String = bufferToIPv4(ipv4Buffer); // '192.168.0.1'
+
+// IPv6 buffer conversions (supports compressed notation)
+const ipv6Buffer = ipv6ToBuffer("2001:db8::"); // ArrayBuffer (16 bytes)
+console.log(ipv6Buffer.byteLength); // 16
+const ipv6String = bufferToIPv6(ipv6Buffer); // '2001:0db8:0000:0000:0000:0000:0000:0000'
+
+// Round-trip conversion
+const compressedIPv6 = "2001:db8::1";
+const buffer = ipv6ToBuffer(compressedIPv6);
+const expandedIPv6 = bufferToIPv6(buffer); // Fully expanded format
+```
+
 ## 📚 API Reference
 
 ### 🔍 IP Address Validation
@@ -171,6 +197,24 @@ Convert IP address to binary string.
 #### `toNumber(ip: string): number | bigint`
 
 Convert IP address to numeric value.
+
+### 🔄 Buffer Conversions
+
+#### `ipv4ToBuffer(ip: string): ArrayBuffer`
+
+Convert IPv4 address to ArrayBuffer (4 bytes).
+
+#### `ipv6ToBuffer(ip: string): ArrayBuffer`
+
+Convert IPv6 address to ArrayBuffer (16 bytes). Supports compressed notation.
+
+#### `bufferToIPv4(buffer: ArrayBuffer): string`
+
+Convert ArrayBuffer (4 bytes) to IPv4 address.
+
+#### `bufferToIPv6(buffer: ArrayBuffer): string`
+
+Convert ArrayBuffer (16 bytes) to IPv6 address.
 
 ### 🏷️ IP Address Type Detection
 

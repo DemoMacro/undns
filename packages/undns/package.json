@@ -1,7 +1,7 @@
 {
   "name": "undns",
-  "version": "0.0.6",
-  "description": "Unified DNS management library for multi-provider DNS operations",
+  "version": "0.0.7",
+  "description": "Unified DNS library with multi-driver support, DoH server, and comprehensive record management",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
@@ -35,13 +35,18 @@
   "keywords": [
     "dns",
     "dns-management",
+    "doh",
+    "rfc8484",
     "cloudflare",
     "vercel",
     "dnspod",
     "domain",
     "records",
     "typescript",
-    "nodejs"
+    "nodejs",
+    "h3",
+    "tlsa",
+    "naptr"
   ],
   "author": {
     "name": "Demo Macro",

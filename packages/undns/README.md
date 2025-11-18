@@ -13,8 +13,10 @@
 - 🔄 **Driver Pattern**: Consistent API design across different DNS providers
 - 📝 **TypeScript First**: Full type safety with comprehensive DNS record types
 - 🔧 **Flexible Operations**: Support for read/write operations where providers allow
-- 🚀 **Zero Dependencies**: Lightweight and fast implementation
+- 🚀 **High Performance**: Built on h3 with minimal dependencies
 - 🎯 **Entity-Based**: Domain and record-focused API for intuitive DNS management
+- 🛡️ **DNS over HTTPS Server**: RFC 8484 compliant DoH server implementation
+- 🔍 **Advanced Record Types**: Support for TLSA, NAPTR, and other specialized records
 
 ## Installation
 
@@ -114,6 +116,37 @@ import dohDriver from "undns/drivers/doh";
 import nullDriver from "undns/drivers/null";
 ```
 
+### DNS over HTTPS Server
+
+```typescript
+import { createDohServer, createDohHandler } from "undns/servers/doh";
+
+// Create and start DoH server
+const dohServer = createDohServer();
+dohServer.serve(8080);
+console.log("DoH Server running on http://localhost:8080/dns-query");
+
+// Use handler with existing h3 app
+import { createApp } from "h3";
+const app = createApp();
+const dohHandler = createDohHandler();
+app.use("/dns-query", dohHandler);
+```
+
+### Error Handling
+
+```typescript
+import { safeCall, unwrapResult } from "undns/utils";
+
+const result = await safeCall(() => dns.getRecords("example.com"), []);
+
+if (result.error) {
+  console.error("DNS query failed:", result.error);
+} else {
+  console.log("Records:", unwrapResult(result));
+}
+```
+
 ## API Reference
 
 ### DNS Manager
@@ -208,7 +241,7 @@ Remove multiple DNS records.
 
 ### DNS Record Types
 
-The library uses Node.js standard DNS record types:
+The library supports comprehensive DNS record types:
 
 - **A**: `{ type: 'A', address: string, ttl: number }`
 - **AAAA**: `{ type: 'AAAA', address: string, ttl: number }`
@@ -219,6 +252,8 @@ The library uses Node.js standard DNS record types:
 - **SOA**: `{ type: 'SOA', nsname: string, hostmaster: string, serial: number, refresh: number, retry: number, expire: number, minttl: number }`
 - **SRV**: `{ type: 'SRV', priority: number, weight: number, port: number, name: string }`
 - **CAA**: `{ type: 'CAA', critical: number, issue?: string, iodef?: string }`
+- **TLSA**: `{ type: 'TLSA', usage: number, selector: number, matchingType: number, certificate: string }`
+- **NAPTR**: `{ type: 'NAPTR', order: number, preference: number, flags: string, service: string, regexp: string, replacement: string }`
 
 ## License
 

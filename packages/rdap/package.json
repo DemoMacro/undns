@@ -1,7 +1,7 @@
 {
   "name": "rdap",
-  "version": "0.0.9",
-  "description": "A modern RDAP (Registration Data Access Protocol) client and server implementation following ICANN standards.",
+  "version": "0.0.10",
+  "description": "Modern RDAP client and server with RFC compliance, bootstrap service, and h3 integration",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
@@ -31,7 +31,14 @@
     "whois",
     "domain",
     "ip",
-    "asn"
+    "asn",
+    "registry",
+    "icann",
+    "rfc",
+    "bootstrap",
+    "h3",
+    "server",
+    "client"
   ],
   "author": {
     "name": "Demo Macro",

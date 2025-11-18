@@ -15,8 +15,7 @@ import {
 import { HTTPError } from "h3";
 import type { Driver, DNSRecord, DOHResponse } from "..";
 import { createDNSManager } from "..";
-import type { AnyRecord } from "node:dns";
-import { isIPv4, ipv4ToInt, ipv6ToBigInt } from "ipdo";
+import { ipv4ToBuffer, ipv6ToBuffer } from "ipdo";
 
 // DNS type mapping: string to number
 const DNS_TYPE_NUMBERS: Record<string, number> = {
@@ -42,46 +41,6 @@ Object.entries(DNS_TYPE_NUMBERS).forEach(([key, value]) => {
 // Helper to get DNS type string from number
 function getDnsTypeString(typeNumber: number): string {
   return DNS_TYPE_STRINGS[typeNumber] || "A";
-}
-
-/**
- * Enhanced IPv6 address parser that supports compressed notation (::)
- */
-function parseIPv6(data: string): bigint {
-  // Handle compressed IPv6 addresses with ::
-  if (data.includes("::")) {
-    const parts = data.split(":");
-    const compressedIndex = parts.indexOf("");
-
-    // Count how many empty parts after compression
-    let emptyCount = 0;
-    for (let i = compressedIndex; i < parts.length; i++) {
-      if (parts[i] === "") emptyCount++;
-    }
-
-    // Calculate how many zeros to insert
-    const missingZeros = 8 - (parts.length - emptyCount) + 1;
-
-    const expandedParts: string[] = [];
-    for (let i = 0; i < parts.length; i++) {
-      if (parts[i] === "") {
-        if (i === 0 || i === parts.length - 1) {
-          continue; // Skip empty at start/end (leading/trailing ::)
-        }
-        // Insert missing zeros
-        for (let j = 0; j < missingZeros; j++) {
-          expandedParts.push("0");
-        }
-      } else {
-        expandedParts.push(parts[i]);
-      }
-    }
-
-    data = expandedParts.join(":");
-  }
-
-  // Now use ipdo's ipv6ToBigInt with expanded address
-  return ipv6ToBigInt(data);
 }
 
 const SupportedMethods = ["GET", "HEAD", "POST"];
@@ -532,44 +491,25 @@ function encodeRData(type: number, data: string): Uint8Array {
   switch (type) {
     case 1: {
       // A record - 4 bytes IPv4
-      const aData = new Uint8Array(4);
       try {
-        // Use ipdo's IPv4 validation and conversion
-        if (!isIPv4(data)) {
-          throw new Error(`Invalid IPv4 address: ${data}`);
-        }
-
-        const ipInt = ipv4ToInt(data);
-        aData[0] = (ipInt >> 24) & 0xff;
-        aData[1] = (ipInt >> 16) & 0xff;
-        aData[2] = (ipInt >> 8) & 0xff;
-        aData[3] = ipInt & 0xff;
-        return aData;
+        const buffer = ipv4ToBuffer(data);
+        return new Uint8Array(buffer);
       } catch (error) {
         // Invalid IPv4 address, return zeros
         console.error(`Invalid IPv4 address: ${data}`, error);
-        return aData;
+        return new Uint8Array(4);
       }
     }
 
     case 28: {
       // AAAA record - 16 bytes IPv6
-      const aaaaData = new Uint8Array(16);
       try {
-        // Use enhanced IPv6 parser that supports compressed notation
-        const bigIntValue = parseIPv6(data);
-
-        // Convert BigInt to 16-byte array
-        for (let i = 0; i < 8; i++) {
-          const value = Number((bigIntValue >> BigInt((7 - i) * 16)) & 0xffffn);
-          aaaaData[i * 2] = (value >> 8) & 0xff;
-          aaaaData[i * 2 + 1] = value & 0xff;
-        }
-        return aaaaData;
+        const buffer = ipv6ToBuffer(data);
+        return new Uint8Array(buffer);
       } catch (error) {
         // Invalid IPv6 address, return zeros
         console.error(`Invalid IPv6 address: ${data}`, error);
-        return aaaaData;
+        return new Uint8Array(16);
       }
     }
 
@@ -697,7 +637,7 @@ function convertDNSRecordToDoHAnswer(record: DNSRecord): {
     data: "",
   };
 
-  const typedRecord = record as AnyRecord;
+  const typedRecord = record as DNSRecord;
 
   switch (record.type) {
     case "A":

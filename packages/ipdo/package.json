@@ -1,7 +1,7 @@
 {
   "name": "ipdo",
-  "version": "0.0.2",
-  "description": "A powerful and efficient IP address manipulation library",
+  "version": "0.0.3",
+  "description": "High-performance IP address manipulation library with CIDR, IPv4/IPv6, and network operations",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
@@ -29,7 +29,12 @@
     "cidr",
     "subnet",
     "network",
-    "address"
+    "address",
+    "validation",
+    "range",
+    "typescript",
+    "binary",
+    "bitwise"
   ],
   "author": {
     "name": "Demo Macro",

@@ -17,6 +17,38 @@ export function ipv4ToInt(ip: string): number {
  * Convert IPv6 address to BigInt
  */
 export function ipv6ToBigInt(ip: string): bigint {
+  // Handle compressed IPv6 addresses with ::
+  if (ip.includes("::")) {
+    const parts = ip.split(":");
+    const compressedIndex = parts.indexOf("");
+
+    // Count how many empty parts after compression
+    let emptyCount = 0;
+    for (let i = compressedIndex; i < parts.length; i++) {
+      if (parts[i] === "") emptyCount++;
+    }
+
+    // Calculate how many zeros to insert
+    const missingZeros = 8 - (parts.length - emptyCount) + 1;
+
+    const expandedParts: string[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i] === "") {
+        if (i === 0 || i === parts.length - 1) {
+          continue; // Skip empty at start/end (leading/trailing ::)
+        }
+        // Insert missing zeros
+        for (let j = 0; j < missingZeros; j++) {
+          expandedParts.push("0");
+        }
+      } else {
+        expandedParts.push(parts[i]);
+      }
+    }
+
+    ip = expandedParts.join(":");
+  }
+
   return ip.split(":").reduce((int, hex) => {
     return (int << 16n) + BigInt(Number.parseInt(hex || "0", 16));
   }, 0n);
@@ -40,11 +72,25 @@ export function isIPv4(ip: string): boolean {
  * Check if string is valid IPv6 address
  */
 export function isIPv6(ip: string): boolean {
+  // Handle compressed notation
+  if (ip.includes("::")) {
+    const parts = ip.split(":");
+
+    // Count non-empty parts
+    const nonEmptyParts = parts.filter((part) => part !== "");
+    if (nonEmptyParts.length > 8) return false;
+
+    // Validate non-empty parts
+    return nonEmptyParts.every((part) => {
+      return /^[0-9A-Fa-f]{1,4}$/.test(part);
+    });
+  }
+
   const parts = ip.split(":");
   return (
-    parts.length <= 8 &&
+    parts.length === 8 &&
     parts.every((part) => {
-      return /^[0-9A-Fa-f]{0,4}$/.test(part);
+      return /^[0-9A-Fa-f]{1,4}$/.test(part);
     })
   );
 }
@@ -72,6 +118,85 @@ export function bigIntToIPv6(int: bigint): string {
     parts.push(hex.slice(i * 4, (i + 1) * 4));
   }
   return parts.join(":");
+}
+
+/**
+ * Convert IPv4 address to ArrayBuffer (4 bytes)
+ */
+export function ipv4ToBuffer(ip: string): ArrayBuffer {
+  if (!isIPv4(ip)) {
+    throw new Error("Invalid IPv4 address");
+  }
+
+  const buffer = new ArrayBuffer(4);
+  const view = new DataView(buffer);
+  const ipInt = ipv4ToInt(ip);
+
+  view.setUint8(0, (ipInt >> 24) & 0xff);
+  view.setUint8(1, (ipInt >> 16) & 0xff);
+  view.setUint8(2, (ipInt >> 8) & 0xff);
+  view.setUint8(3, ipInt & 0xff);
+
+  return buffer;
+}
+
+/**
+ * Convert IPv6 address to ArrayBuffer (16 bytes)
+ */
+export function ipv6ToBuffer(ip: string): ArrayBuffer {
+  if (!isIPv6(ip)) {
+    throw new Error("Invalid IPv6 address");
+  }
+
+  const buffer = new ArrayBuffer(16);
+  const view = new DataView(buffer);
+  const bigIntValue = ipv6ToBigInt(ip);
+
+  // Convert BigInt to 16-byte array
+  for (let i = 0; i < 8; i++) {
+    const value = Number((bigIntValue >> BigInt((7 - i) * 16)) & 0xffffn);
+    view.setUint16(i * 2, value, false); // big-endian
+  }
+
+  return buffer;
+}
+
+/**
+ * Convert ArrayBuffer to IPv4 address (4 bytes)
+ */
+export function bufferToIPv4(buffer: ArrayBuffer): string {
+  if (buffer.byteLength !== 4) {
+    throw new Error("ArrayBuffer must be 4 bytes for IPv4");
+  }
+
+  const view = new DataView(buffer);
+  const ipInt =
+    (view.getUint8(0) << 24) |
+    (view.getUint8(1) << 16) |
+    (view.getUint8(2) << 8) |
+    view.getUint8(3);
+
+  return intToIPv4(ipInt);
+}
+
+/**
+ * Convert ArrayBuffer to IPv6 address (16 bytes)
+ */
+export function bufferToIPv6(buffer: ArrayBuffer): string {
+  if (buffer.byteLength !== 16) {
+    throw new Error("ArrayBuffer must be 16 bytes for IPv6");
+  }
+
+  const view = new DataView(buffer);
+  let bigIntValue = 0n;
+
+  // Convert 16-byte array to BigInt
+  for (let i = 0; i < 8; i++) {
+    const value = view.getUint16(i * 2, false); // big-endian
+    bigIntValue = (bigIntValue << 16n) + BigInt(value);
+  }
+
+  return bigIntToIPv6(bigIntValue);
 }
 
 /**
