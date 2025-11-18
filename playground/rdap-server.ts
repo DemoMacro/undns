@@ -2,7 +2,7 @@
  * RDAP Server Example
  */
 
-import { createRdapServer } from "rdap";
+import { createRdapServer } from "rdap/server";
 
 console.log("🌐 RDAP Server Example\n");
 

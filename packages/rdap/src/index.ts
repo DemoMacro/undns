@@ -12,6 +12,3 @@ export * from "./utils";
 
 // Export all RDAP client functions
 export * from "./rdap";
-
-// Export all RDAP server functions
-export * from "./server";

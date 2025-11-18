@@ -2,7 +2,7 @@
  * DoH Server Example
  */
 
-import { createDohServer } from "undns";
+import { createDohServer } from "../packages/undns/src/servers/doh";
 import dohDriver from "../packages/undns/src/drivers/doh";
 
 console.log("<🍭 DoH Server Example\n");

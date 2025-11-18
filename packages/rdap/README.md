@@ -113,7 +113,7 @@ console.log("RDAP Server running on http://localhost:8080");
 #### Basic Server
 
 ```typescript
-import { createRdapServer, createRdapHandler } from "rdap";
+import { createRdapServer, createRdapHandler } from "rdap/server";
 
 // Create and start RDAP server
 const server = createRdapServer();
