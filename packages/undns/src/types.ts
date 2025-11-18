@@ -3,6 +3,41 @@ import type { AnyRecord } from "node:dns";
 // Unified DNS record type using Node.js standard types
 export type DNSRecord = AnyRecord & { id?: string };
 
+// DNS over HTTPS (DoH) response type (Google/Cloudflare JSON API format)
+export interface DOHResponse {
+  Status: number; // DNS response code (NOERROR=0, NXDOMAIN=3, SERVFAIL=2)
+  TC?: boolean; // Truncated
+  RD?: boolean; // Recursion Desired
+  RA?: boolean; // Recursion Available
+  AD?: boolean; // Authenticated Data
+  CD?: boolean; // Checking Disabled
+  Question?: Array<{
+    name: string;
+    type: number;
+  }>;
+  Answer?: Array<{
+    name: string;
+    type: number;
+    TTL: number;
+    data: string;
+  }>;
+  Authority?: Array<{
+    name: string;
+    type: number;
+    TTL: number;
+    data: string;
+  }>;
+  Additional?: Array<{
+    name: string;
+    type: number;
+    TTL: number;
+    data: string;
+  }>;
+  edns_client_subnet?: string;
+  Comment?: string;
+  Error?: string; // For error responses
+}
+
 // Helper types for raw DNS resolution results
 export type RawDNSResult =
   | string[] // A, AAAA, CNAME, NS, PTR records
