@@ -1,6 +1,6 @@
 {
   "name": "undns",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Unified DNS library with multi-driver support, DoH server, and comprehensive record management",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",

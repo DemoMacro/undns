@@ -45,6 +45,18 @@ function getDnsTypeString(typeNumber: number): string {
 
 const SupportedMethods = ["GET", "HEAD", "POST"];
 
+export interface DohServerRequest {
+  /**
+   * DNS query name (domain)
+   */
+  name: string;
+
+  /**
+   * DNS record type
+   */
+  type: string;
+}
+
 export interface DohServerOptions {
   /**
    * DNS driver to use for queries (from undns)
@@ -54,7 +66,7 @@ export interface DohServerOptions {
   /**
    * Authorization function for requests
    */
-  authorize?: (request: any) => void | Promise<void>;
+  authorize?: (request: DohServerRequest) => void | Promise<void>;
 }
 
 /**
