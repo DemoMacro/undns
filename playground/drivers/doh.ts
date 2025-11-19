@@ -1,6 +1,5 @@
-import { createDNSManager } from "undns";
+import { createDNSManager, formatRecord, groupRecordsByType } from "undns";
 import dohDriver from "../../packages/undns/src/drivers/doh";
-import { groupRecordsByType, formatRecord } from "../utils";
 
 // Create DNS manager with DOH driver
 const dns = createDNSManager({
