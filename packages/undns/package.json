@@ -1,6 +1,6 @@
 {
   "name": "undns",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Unified DNS library with multi-driver support, DoH server, and comprehensive record management",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -49,9 +49,9 @@
     "naptr"
   ],
   "author": {
-    "name": "Demo Macro",
-    "email": "abc@imst.xyz",
-    "url": "https://imst.xyz/"
+    "name": "Funish",
+    "email": "contact@funish.net",
+    "url": "http://www.funish.net/"
   },
   "license": "MIT",
   "bugs": {

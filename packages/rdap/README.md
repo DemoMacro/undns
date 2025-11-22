@@ -434,4 +434,4 @@ This implementation strictly follows these RDAP-related standards:
 
 ## 📄 License
 
-[MIT](../../LICENSE) © [Demo Macro](https://imst.xyz/)
+[MIT](../../LICENSE) © [Funish](http://www.funish.net/)

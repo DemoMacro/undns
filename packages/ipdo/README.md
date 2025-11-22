@@ -1,5 +1,10 @@
 # ipdo 🔍
 
+![npm version](https://img.shields.io/npm/v/ipdo)
+![npm downloads](https://img.shields.io/npm/dw/ipdo)
+![npm license](https://img.shields.io/npm/l/ipdo)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
+
 A powerful and efficient IP address manipulation library.
 
 ## ✨ Features
@@ -301,4 +306,4 @@ The library throws descriptive errors for:
 
 ## 📄 License
 
-[MIT](../../LICENSE) © [Demo Macro](https://imst.xyz/)
+[MIT](../../LICENSE) © [Funish](http://www.funish.net/)

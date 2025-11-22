@@ -1,6 +1,6 @@
 {
   "name": "rdap",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Modern RDAP client and server with RFC compliance, bootstrap service, and h3 integration",
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -42,9 +42,9 @@
     "client"
   ],
   "author": {
-    "name": "Demo Macro",
-    "email": "abc@imst.xyz",
-    "url": "https://imst.xyz/"
+    "name": "Funish",
+    "email": "contact@funish.net",
+    "url": "http://www.funish.net/"
   },
   "license": "MIT",
   "bugs": {

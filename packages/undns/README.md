@@ -257,4 +257,4 @@ The library supports comprehensive DNS record types:
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)
+- [MIT](LICENSE) &copy; [Funish](http://www.funish.net/)
